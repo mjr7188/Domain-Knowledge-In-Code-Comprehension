@@ -1,0 +1,86 @@
+============================================================
+FIGURE 1: Participant Disciplines and Areas of Study
+============================================================
+        Group                      Major / Discipline  Count
+    Computing Computer Science / Software Engineering      2
+    Computing               Other (Computing Related)      1
+Non-Computing                   Other (Non-Computing)      3
+Non-Computing                  Pre-Medicine / Nursing      3
+Non-Computing                Chemistry / Biochemistry      1
+
+Total participants : 10
+Computing group    : 3
+Non-computing group: 7
+
+============================================================
+FIGURE 2: Self-Reported Domain Expertise -- Non-Computing Participants (n=7)
+============================================================
+      Domain          Familiarity Level  Count
+Pharmacology      1 - General awareness      2
+Pharmacology 2 - Some formal coursework      2
+Pharmacology 3 - Substantial coursework      1
+Pharmacology  4 - Advanced/professional      2
+   Chemistry 2 - Some formal coursework      3
+   Chemistry 3 - Substantial coursework      2
+   Chemistry  4 - Advanced/professional      2
+     Finance      1 - General awareness      7
+
+============================================================
+FIGURE 2: Self-Reported Domain Expertise -- Computing Participants (n=3)
+============================================================
+      Domain          Familiarity Level  Count
+Pharmacology      1 - General awareness      3
+   Chemistry            0 - No exposure      1
+   Chemistry      1 - General awareness      1
+   Chemistry 2 - Some formal coursework      1
+     Finance      1 - General awareness      2
+     Finance 2 - Some formal coursework      1
+============================================================
+DOMAIN ELIGIBILITY CHECK (non-computing participants)
+Threshold: familiarity score >= 2 (some formal coursework)
+============================================================
+Pharmacology   : 5 non-computing participant(s) met threshold  --> included
+Chemistry      : 7 non-computing participant(s) met threshold  --> included
+Finance        : 0 non-computing participants met threshold  --> excluded (no participants received this domain's tasks)
+
+============================================================
+ANALYSIS 1: Spearman Correlation
+Domain familiarity vs. comprehension accuracy
+============================================================
+Pharmacology   : r = 0.315,  p = 0.375
+Chemistry      : r = -0.262,  p = 0.464
+Finance        : excluded (no variance in non-computing familiarity scores)
+
+============================================================
+ANALYSIS 2: Mann-Whitney U
+CS group vs. Domain group -- per-domain comprehension score
+(Only eligibility-checked domains + computing baseline)
+(Participants not routed to a domain are excluded per domain)
+============================================================
+
+Pharmacology
+  CS group     (n=3): [12  9 11]
+  Domain group (n=3): [ 9 13  9]
+  Mann-Whitney U = 5.0,  p = 1.000
+
+Chemistry
+  CS group     (n=3): [8 7 7]
+  Domain group (n=2): [7 8]
+  Mann-Whitney U = 2.5,  p = 1.000
+
+Computing
+  CS group     (n=3): [11  8 11]
+  Domain group (n=4): [7 5 7 8]
+  Mann-Whitney U = 11.5,  p = 0.069
+
+Finance: excluded (did not pass eligibility check in Analysis 1)
+
+============================================================
+ANALYSIS 3: Multiple Linear Regression
+Predictors: domain familiarity + programming experience
+Outcome: pharmacology comprehension score (SC1)
+============================================================
+n = 10
+Intercept                      : -3.041
+Domain familiarity coefficient : 2.631
+Programming experience coeff   : 2.472
