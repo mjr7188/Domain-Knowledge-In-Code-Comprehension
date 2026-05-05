@@ -59,28 +59,37 @@ CS group vs. Domain group -- per-domain comprehension score
 ============================================================
 
 Pharmacology
-  CS group     (n=3): [12  9 11]
-  Domain group (n=3): [ 9 13  9]
-  Mann-Whitney U = 5.0,  p = 1.000
+  CS group      (n=3): [12  9 11]
+  Non-CS group  (n=5): [11 10  9 13  9]
+  Mann-Whitney U = 8.5,  p = 0.878
 
 Chemistry
-  CS group     (n=3): [8 7 7]
-  Domain group (n=2): [7 8]
-  Mann-Whitney U = 2.5,  p = 1.000
+  CS group      (n=3): [8 7 7]
+  Non-CS group  (n=5): [5 7 5 7 8]
+  Mann-Whitney U = 10.5,  p = 0.421
 
 Computing
-  CS group     (n=3): [11  8 11]
-  Domain group (n=4): [7 5 7 8]
-  Mann-Whitney U = 11.5,  p = 0.069
+  CS group      (n=3): [11  8 11]
+  Non-CS group  (n=7): [7 6 8 7 5 7 8]
+  Mann-Whitney U = 20.0,  p = 0.035
 
-Finance: excluded (did not pass eligibility check in Analysis 1)
+Finance: excluded (did not pass eligibility check)
 
 ============================================================
 ANALYSIS 3: Multiple Linear Regression
 Predictors: domain familiarity + programming experience
 Outcome: pharmacology comprehension score (SC1)
+(Participants not routed to pharmacology tasks excluded)
 ============================================================
-n = 10
-Intercept                      : -3.041
-Domain familiarity coefficient : 2.631
-Programming experience coeff   : 2.472
+n = 8
+
+Predictor                    Coeff       SE        t        p
+-------------------------------------------------------------
+Intercept                    7.407    2.891    2.562    0.051  .
+Domain familiarity           0.572    0.645    0.887    0.416
+Programming experience       0.657    0.596    1.102    0.320
+
+R-squared              : 0.200
+Adjusted R-squared     : -0.120
+F-statistic     : 0.625  (df1=2, df2=5)
+F p-value       : 0.573
