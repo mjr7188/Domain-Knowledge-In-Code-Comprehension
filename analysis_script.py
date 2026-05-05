@@ -155,52 +155,56 @@ for domain in excluded:
 # plus the computing domain as the shared baseline reference.
 # Participants with all-blank question responses for a domain are excluded
 # as they were not routed to that domain's tasks by the survey instrument.
- 
+
 print("\n" + "=" * 60)
 print("ANALYSIS 2: Mann-Whitney U")
 print("CS group vs. Domain group -- per-domain comprehension score")
 print("(Only eligibility-checked domains + computing baseline)")
 print("(Participants not routed to a domain are excluded per domain)")
 print("=" * 60)
- 
+
 domain_mask = df['Q2'].isin(['Pre-Medicine / Nursing', 'Chemistry / Biochemistry'])
- 
+
 # Domain question columns — used to detect routing
 domain_question_cols = {
-    'Pharmacology': [c for c in df.columns if c.startswith('A') and '-Q' in c],
-    'Chemistry':    [c for c in df.columns if c.startswith('B') and '-Q' in c],
-    'Finance':      [c for c in df.columns if c.startswith('D') and '-Q' in c],
-    'Computing':    [c for c in df.columns if c.startswith('C') and '-Q' in c],
+   'Pharmacology': [c for c in df.columns if c.startswith('A') and '-Q' in c],
+   'Chemistry':    [c for c in df.columns if c.startswith('B') and '-Q' in c],
+   'Finance':      [c for c in df.columns if c.startswith('D') and '-Q' in c],
+   'Computing':    [c for c in df.columns if c.startswith('C') and '-Q' in c],
 }
- 
+
 # Score columns per domain
 domain_score_cols = {domain: cols[1] for domain, cols in included_domains.items()}
 domain_score_cols['Computing'] = 'SC3'
- 
+
 analysis2_domains = {**{d: domain_score_cols[d] for d in included_domains}, 'Computing': 'SC3'}
- 
+
 for domain, score_col in analysis2_domains.items():
-    q_cols = domain_question_cols[domain]
- 
-    # A participant was routed if at least one question in the domain is non-blank
-    routed_mask = df[q_cols].notna().any(axis=1)
- 
-    cs_scores     = df.loc[computing_mask & routed_mask, score_col].dropna()
-    domain_scores = df.loc[domain_mask    & routed_mask, score_col].dropna()
- 
-    print(f"\n{domain}")
-    print(f"  CS group     (n={len(cs_scores)}): {cs_scores.values}")
-    print(f"  Domain group (n={len(domain_scores)}): {domain_scores.values}")
- 
-    if len(cs_scores) > 0 and len(domain_scores) > 0:
-        stat, p = stats.mannwhitneyu(cs_scores, domain_scores, alternative='two-sided')
-        print(f"  Mann-Whitney U = {stat:.1f},  p = {p:.3f}")
-    else:
-        print("  Insufficient data for test")
- 
+   q_cols = domain_question_cols[domain]
+
+   # A participant was routed if at least one question in the domain is non-blank
+   routed_mask = df[q_cols].notna().any(axis=1)
+
+   # Compare CS group vs ALL non-computing participants for every domain.
+   comparison_mask = non_computing_mask
+   group_label     = 'Non-CS group  '
+
+   cs_scores         = df.loc[computing_mask   & routed_mask, score_col].dropna()
+   comparison_scores = df.loc[comparison_mask  & routed_mask, score_col].dropna()
+
+   print(f"\n{domain}")
+   print(f"  CS group      (n={len(cs_scores)}): {cs_scores.values}")
+   print(f"  {group_label}(n={len(comparison_scores)}): {comparison_scores.values}")
+
+   if len(cs_scores) > 0 and len(comparison_scores) > 0:
+       stat, p = stats.mannwhitneyu(cs_scores, comparison_scores, alternative='two-sided')
+       print(f"  Mann-Whitney U = {stat:.1f},  p = {p:.3f}")
+   else:
+       print("  Insufficient data for test")
+
 excluded_a2 = [d for d in ['Pharmacology', 'Chemistry', 'Finance'] if d not in included_domains]
 for domain in excluded_a2:
-    print(f"\n{domain}: excluded (did not pass eligibility check in Analysis 1)")
+    print(f"\n{domain}: excluded (did not pass eligibility check)")
 
 # ── Analysis 3: Multiple Linear Regression ───────────────────────────────────
 # Predictors: domain familiarity + programming experience
@@ -210,20 +214,53 @@ print("\n" + "=" * 60)
 print("ANALYSIS 3: Multiple Linear Regression")
 print("Predictors: domain familiarity + programming experience")
 print("Outcome: pharmacology comprehension score (SC1)")
+print("(Participants not routed to pharmacology tasks excluded)")
 print("=" * 60)
-
-sub = df[['pharma_score', 'prog_score', 'SC1']].dropna()
-print(f"n = {len(sub)}")
-
+ 
+pharma_routed_mask = df[domain_question_cols['Pharmacology']].notna().any(axis=1)
+sub = df.loc[pharma_routed_mask, ['pharma_score', 'prog_score', 'SC1']].dropna()
+n = len(sub)
+print(f"n = {n}")
+ 
 X = sub[['pharma_score', 'prog_score']].values
 y = sub['SC1'].values
+X_aug = np.column_stack([np.ones(n), X])
+p = X_aug.shape[1]          # number of parameters (intercept + 2 predictors)
 
-X_aug = np.column_stack([np.ones(len(X)), X])
+# ── OLS coefficients ──────────────────────────────────────────────────────────
 coeffs, _, _, _ = np.linalg.lstsq(X_aug, y, rcond=None)
 
-print(f"Intercept                      : {coeffs[0]:.3f}")
-print(f"Domain familiarity coefficient : {coeffs[1]:.3f}")
-print(f"Programming experience coeff   : {coeffs[2]:.3f}")
+# ── Model fit ─────────────────────────────────────────────────────────────────
+y_hat   = X_aug @ coeffs
+resid   = y - y_hat
+RSS = float(resid @ resid)                          # residual sum of squares
+TSS = float(((y - y.mean()) ** 2).sum())            # total sum of squares
+R2 = 1 - RSS / TSS
+R2_adj = 1 - (RSS / (n - p)) / (TSS / (n - 1))        # adjusted R²
+F_stat = (R2 / (p - 1)) / ((1 - R2) / (n - p))        # overall F-statistic
+F_p = 1 - stats.f.cdf(F_stat, p - 1, n - p)
+
+# ── Coefficient standard errors & t-tests ────────────────────────────────────
+s2 = RSS / (n - p)                                 # mean squared error
+cov = s2 * np.linalg.inv(X_aug.T @ X_aug)          # covariance matrix
+se = np.sqrt(np.diag(cov))                         # standard errors
+t_stats = coeffs / se
+p_vals = 2 * (1 - stats.t.cdf(np.abs(t_stats), df=n - p))
+
+labels  = ['Intercept', 'Domain familiarity', 'Programming experience']
+
+# ── Print coefficient table ───────────────────────────────────────────────────
+print(f"\n{'Predictor':<25} {'Coeff':>8} {'SE':>8} {'t':>8} {'p':>8}")
+print("-" * 61)
+for lbl, coef, s, t, pv in zip(labels, coeffs, se, t_stats, p_vals):
+   sig = " *" if pv < 0.05 else ("  ." if pv < 0.10 else "")
+   print(f"{lbl:<25} {coef:>8.3f} {s:>8.3f} {t:>8.3f} {pv:>8.3f}{sig}")
+
+# ── Print model fit summary ───────────────────────────────────────────────────
+print(f"\nR-squared              : {R2:.3f}")
+print(f"Adjusted R-squared     : {R2_adj:.3f}")
+print(f"F-statistic     : {F_stat:.3f}  (df1={p-1}, df2={n-p})")
+print(f"F p-value       : {F_p:.3f}")
 
 sys.stdout.close()
 sys.stdout = sys.__stdout__
